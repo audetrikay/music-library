@@ -1,0 +1,1458 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MA BIBLIOTHÈQUE SONORE
+   - Livres fins, élancés et serrés (jamais étirés ni coupés)
+   - Gauche (70%) : 2 grandes étagères principales bien hautes
+   - Droite (30%) : 1 étagère plus étroite sur 3 étages
+   - Planches en bois 100% visibles en bas (aucun livre mangé)
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --canvas:       #efe5d0;
+  --canvas-dark:  #e2d4b7;
+  --ink:          #181512;
+  --wood-top:     #a45c38;
+  --wood-face:    #652f17;
+  --wood-deep:    #240f06;
+  --accent-red:   #d93829;
+  --accent-gold:  #e6a825;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: "DM Sans", sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   1. STRUCTURE DU MUR-BIBLIOTHÈQUE BIEN AJUSTÉE À L'ÉCRAN
+   ═══════════════════════════════════════════════════ */
+
+.library-view {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 38px;
+  overflow: hidden;
+  background: var(--canvas);
+}
+
+/* Grille principale :
+   - Gauche (70%) : 2 grandes étagères principales
+   - Droite (30%) : 1 colonne plus étroite à 3 étages */
+.shelves {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 70fr 30fr;
+  padding: 4px 6px 6px;
+  gap: 0;
+  overflow: visible;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(230, 168, 37, 0.08), transparent 55%),
+    var(--canvas);
+}
+
+/* Colonne de gauche : 2 GRANDES ÉTAGÈRES PRINCIPALES */
+.bookcase-main {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  border-left: 6px solid var(--ink);
+  border-top: 6px solid var(--ink);
+  border-right: 10px solid var(--ink);
+  box-shadow: inset -4px 0 0 var(--wood-face);
+}
+
+/* Colonne de droite : ÉTAGÈRE PLUS ÉTROITE SUR 3 ÉTAGES */
+.bookcase-tower {
+  display: grid;
+  grid-template-rows: 1fr 1fr 1fr;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  border-top: 6px solid var(--ink);
+  border-right: 6px solid var(--ink);
+  background: rgba(24, 21, 18, 0.025);
+}
+
+
+/* ───────── ÉTAGÈRE / CASIER (Jamais coupé en bas) ───────── */
+
+.shelf {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 18px 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: visible;
+
+  /* Planche en bois massif toujours visible à l'intérieur de la cellule */
+  border-bottom: 16px solid var(--wood-face);
+  box-shadow:
+    inset 0 -3px 0 var(--ink),
+    inset 0 10px 16px rgba(24, 15, 8, 0.08);
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(24, 16, 8, 0.04) 0%,
+      transparent 35%,
+      rgba(35, 18, 8, 0.13) 100%
+    );
+}
+
+/* Dessus éclairé de la planche en bois */
+.shelf::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--wood-top);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Cloison verticale noire/bois qui sépare deux casiers */
+.shelf-divider {
+  width: 7px;
+  height: 92%;
+  background: linear-gradient(90deg, var(--ink) 0 60%, var(--wood-face) 60% 100%);
+  margin: 0 6px;
+  flex-shrink: 0;
+  align-self: flex-end;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.25);
+}
+
+
+/* ═══════════════════════════════════════════════════
+   LIVRE — FIN, ÉLANCÉ & BIEN PROPORTIONNÉ
+   ═══════════════════════════════════════════════════ */
+
+.book {
+  position: relative;
+  display: block;
+  /* Taille fine qui ne s'élargit jamais (0), mais peut se serrer légèrement (1) jusqu'à 90 albums */
+  flex: 0 1 var(--bw);
+  min-width: 18px;
+  width: var(--bw);
+  height: var(--bh);
+  margin-left: var(--gap-left, 0px);
+  margin-right: var(--gap-right, 0px);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg));
+  transform-origin: bottom center;
+  transition: transform 80ms ease-out;
+  outline: none;
+}
+
+/* ─── FLÈCHE CURSEUR RÉTRO ─── */
+
+.book-cursor {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translate3d(-50%, 0, 0);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 90;
+}
+
+.book-cursor-tag {
+  background: var(--ink);
+  color: #ffde59;
+  font-family: "Press Start 2P", monospace;
+  font-size: 5.5px;
+  padding: 2.5px 4px;
+  border: 1.5px solid #ffde59;
+  box-shadow: 2px 2px 0 var(--accent-red);
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+.book-cursor-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--accent-red);
+}
+
+.book.selected .book-cursor {
+  display: flex;
+  animation: retro-bob 500ms ease-in-out infinite;
+}
+
+@keyframes retro-bob {
+  0%, 100% { transform: translate3d(-50%, 0, 0); }
+  50%      { transform: translate3d(-50%, 4px, 0); }
+}
+
+.book.selected {
+  transform: translate3d(0, -7px, 0) rotate(0deg) scale(1.04);
+  z-index: 75;
+}
+
+.book.selected .book-spine {
+  box-shadow:
+    0 0 0 2.5px #ffde59,
+    0 6px 14px rgba(0, 0, 0, 0.45),
+    inset 2px 0 4px rgba(255, 255, 255, 0.25),
+    inset -4px 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.book:hover:not(.selected) {
+  transform: translate3d(0, -4px, 0) rotate(var(--tilt, 0deg));
+  z-index: 50;
+}
+
+
+/* ─── STRUCTURE 3D DU LIVRE FIN ─── */
+
+.book-top-pages {
+  position: absolute;
+  top: 0;
+  left: 1px;
+  width: var(--face-w, 42%);
+  height: 5px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      #f7f0df 0 1px,
+      #d8cab0 1px 2px
+    );
+  border-top: 1px solid rgba(30, 20, 10, 0.65);
+  border-left: 1px solid rgba(30, 20, 10, 0.65);
+  transform: skewY(-5deg);
+  transform-origin: right bottom;
+  z-index: 1;
+}
+
+.book-face {
+  position: absolute;
+  top: 4px;
+  bottom: 0;
+  left: 0;
+  width: var(--face-w, 42%);
+  overflow: hidden;
+  background: var(--bc);
+  border: 1px solid rgba(20, 14, 10, 0.82);
+  border-right: none;
+  border-radius: 2px 0 0 2px;
+  transform: skewY(-5deg);
+  transform-origin: right bottom;
+  z-index: 2;
+}
+
+.book-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.book-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      transparent 18%,
+      rgba(0, 0, 0, 0.42) 95%,
+      rgba(255, 255, 255, 0.06) 100%
+    );
+  pointer-events: none;
+}
+
+.book-spine {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--spine-w, 58%);
+  min-width: 16px;
+  background-color: var(--bc);
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(255, 255, 255, 0.16) 22%,
+      rgba(255, 255, 255, 0.03) 55%,
+      rgba(0, 0, 0, 0.25) 88%,
+      rgba(0, 0, 0, 0.42) 100%
+    );
+  border: 1.5px solid rgba(15, 10, 6, 0.9);
+  border-radius: 1px 2px 2px 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 1px 5px;
+  overflow: hidden;
+  z-index: 3;
+  box-shadow:
+    -1px 0 0 rgba(0, 0, 0, 0.6),
+    2px 2px 4px rgba(0, 0, 0, 0.22),
+    inset 1px 0 0 rgba(255, 255, 255, 0.18),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.book-spine::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 18px;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.4),
+    0 calc(var(--bh) - 36px) 0 rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.book-spine[data-pattern="bands"]::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: var(--band-color);
+  opacity: 0.88;
+  box-shadow: 0 calc(var(--bh) - 22px) 0 var(--band-color);
+  pointer-events: none;
+}
+
+.book-spine[data-pattern="label"] .book-title-wrap {
+  background: #efe4ce;
+  color: #181512;
+  border: 1px solid rgba(24, 21, 18, 0.75);
+  padding: 4px 1px;
+  border-radius: 1px;
+}
+
+.book-spine[data-pattern="label"] .book-title {
+  color: #181512;
+}
+
+.book-spine[data-pattern="split"] {
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(255, 255, 255, 0.14) 22%,
+      rgba(0, 0, 0, 0.36) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--bc) 0 68%,
+      var(--band-color) 68% 70%,
+      #1d1916 70% 100%
+    );
+}
+
+.book-spine[data-pattern="stamp"]::after {
+  content: "";
+  position: absolute;
+  inset: 3px 2px;
+  border: 1px solid rgba(255, 235, 180, 0.32);
+  pointer-events: none;
+}
+
+.book-code {
+  font-family: "Special Elite", cursive;
+  font-size: 6.5px;
+  color: var(--text-color);
+  opacity: 0.75;
+  letter-spacing: -0.02em;
+  z-index: 2;
+}
+
+.book-title-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 75%;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.book-title {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: var(--text-color);
+  font-family: var(--title-font);
+  font-size: var(--title-size, 10.5px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 0.95;
+  text-align: center;
+  max-height: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-artist {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  max-height: 22%;
+  overflow: hidden;
+  color: var(--text-color);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.78;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   PILES DE LIVRES COUCHÉS & LIVRES POSÉS AU SOMMET
+   ═══════════════════════════════════════════════════ */
+
+.book-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0 6px;
+  flex: 0 0 auto;
+  align-self: flex-end;
+}
+
+.book-cluster {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  margin: 0 6px;
+  flex: 0 0 auto;
+}
+
+.book-cluster-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.book.book--topper {
+  position: absolute;
+  bottom: var(--topper-bottom, 150px);
+  left: 50%;
+  transform: translate3d(-50%, 0, 0) rotate(var(--tilt, -2deg));
+  z-index: 42;
+  flex: 0 0 auto;
+}
+
+.book.book--topper.selected {
+  transform: translate3d(-50%, -6px, 0) rotate(0deg) scale(1.05);
+  z-index: 80;
+}
+
+.book.book--topper:hover:not(.selected) {
+  transform: translate3d(-50%, -3px, 0) rotate(var(--tilt, -2deg));
+  z-index: 55;
+}
+
+.book.book--horizontal {
+  flex: 0 0 auto;
+  width: var(--bw);
+  height: var(--bh);
+  margin: 0;
+}
+
+.book-stack .book.book--horizontal {
+  transform: translate3d(var(--x-shift, 0px), 0, 0) rotate(var(--tilt, 0deg));
+}
+
+.book-stack .book.book--horizontal.selected {
+  transform: translate3d(0, -5px, 0) scale(1.05);
+  z-index: 80;
+}
+
+.book.book--horizontal .book-top-pages {
+  display: none;
+}
+
+.book.book--horizontal .book-face {
+  top: -4px;
+  left: 3px;
+  right: 3px;
+  bottom: auto;
+  width: calc(100% - 6px);
+  height: 5px;
+  transform: skewX(-18deg);
+  transform-origin: bottom center;
+  border: 1px solid rgba(20, 14, 10, 0.75);
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+}
+
+.book.book--horizontal .book-spine {
+  inset: 0;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  flex-direction: row;
+  padding: 2px 6px;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.04) 45%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+}
+
+.book.book--horizontal .book-spine::before {
+  top: 0;
+  bottom: 0;
+  left: 12px;
+  right: auto;
+  width: 1.5px;
+  height: 100%;
+  box-shadow:
+    1px 0 0 rgba(0, 0, 0, 0.45),
+    calc(var(--bw) - 24px) 0 0 rgba(255, 255, 255, 0.22);
+}
+
+.book.book--horizontal .book-title-wrap {
+  max-height: none;
+  max-width: 74%;
+  padding: 1px 4px;
+}
+
+.book.book--horizontal .book-title,
+.book.book--horizontal .book-artist {
+  writing-mode: horizontal-tb;
+  transform: none;
+}
+
+.book.book--horizontal .book-artist {
+  max-height: none;
+  max-width: 22%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   2. HUD RÉTRO EN BAS
+   ═══════════════════════════════════════════════════ */
+
+.retro-hud {
+  height: 38px;
+  background: var(--ink);
+  color: #f5ebd6;
+  border-top: 3px solid var(--accent-gold);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Space Grotesk", sans-serif;
+  z-index: 50;
+}
+
+.hud-controls {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hud-controls kbd {
+  display: inline-block;
+  background: #2f2a24;
+  color: #ffde59;
+  border: 1px solid #ffde59;
+  box-shadow: 0 2px 0 #ffde59;
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin-right: 4px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   3. PAGE DÉTAIL — POSTER HABILLÉ PAR TES IMAGES (pochette1..6)
+   ═══════════════════════════════════════════════════ */
+
+.album-page {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  background: var(--stage-bg, #161412);
+  overflow-y: auto;
+}
+
+.album-page[hidden] {
+  display: none;
+}
+
+.album-page-backdrop {
+  position: fixed;
+  inset: 0;
+  background-image: var(--poster-art);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.album-page-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.back-btn,
+.poster-Step-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ink);
+  color: #f5ebd6;
+  border: 2px solid #f5ebd6;
+  box-shadow: 3px 3px 0 var(--accent-red);
+  padding: 7px 14px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.back-btn:hover,
+.poster-Step-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--accent-gold);
+}
+
+.back-key {
+  background: var(--accent-red);
+  color: #fff;
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  padding: 3px 5px;
+}
+
+.poster-nav-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.poster-stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 12px 20px 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.poster-card {
+  position: relative;
+  width: min(92vw, 620px);
+  background-color: var(--poster-bg, #d8a628);
+  background-image:
+    var(--poster-veil),
+    var(--poster-art);
+  background-size: cover;
+  background-position: center;
+  color: var(--poster-ink, #181512);
+  border: 3px solid var(--poster-ink, #181512);
+  border-radius: 12px;
+  padding: 22px 26px 24px;
+  box-shadow:
+    0 20px 45px rgba(0, 0, 0, 0.6),
+    9px 9px 0 var(--ink);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.poster-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.14;
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.25) 0%, transparent 45%, rgba(0, 0, 0, 0.2) 100%);
+}
+
+.poster-top {
+  position: relative;
+  z-index: 2;
+  background: var(--poster-panel);
+  border: 2px solid var(--poster-ink);
+  padding: 12px 16px;
+  box-shadow: 4px 4px 0 var(--poster-ink);
+}
+
+.poster-meta-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.poster-stamp {
+  background: var(--poster-ink);
+  color: var(--poster-bg);
+  padding: 2px 8px;
+  font-weight: 800;
+}
+
+.poster-artist {
+  font-family: var(--poster-font, "Anton", sans-serif);
+  font-size: clamp(30px, 4.5vw, 50px);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--poster-accent, var(--poster-ink));
+  word-break: break-word;
+}
+
+.poster-title {
+  font-family: "Playfair Display", serif;
+  font-style: italic;
+  font-weight: 900;
+  font-size: clamp(17px, 2.2vw, 24px);
+  line-height: 1.1;
+  margin-top: 4px;
+  color: var(--poster-ink);
+}
+
+.poster-body {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 205px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.poster-cover-frame {
+  position: relative;
+  background: var(--poster-ink);
+  padding: 8px;
+  border: 2px solid var(--poster-ink);
+  box-shadow: 6px 6px 0 var(--poster-accent);
+}
+
+.poster-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--poster-bg);
+}
+
+.poster-sticker {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--poster-accent);
+  color: #fff;
+  border: 1.5px solid var(--poster-ink);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 4px 9px;
+  transform: rotate(5deg);
+  box-shadow: 2px 2px 0 var(--poster-ink);
+}
+
+.poster-tracks-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  background: var(--poster-panel);
+  border: 2px solid var(--poster-ink);
+  padding: 12px 14px;
+  box-shadow: 4px 4px 0 var(--poster-ink);
+}
+
+.poster-badge-box {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--poster-ink);
+  padding-bottom: 6px;
+}
+
+.badge-label {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
+.badge-sub {
+  font-family: "Special Elite", cursive;
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+.tracklist-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.tracklist-line {
+  flex: 1;
+  height: 1.5px;
+  background: var(--poster-ink);
+  opacity: 0.35;
+}
+
+.poster-tracks {
+  list-style: none;
+  counter-reset: trk;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 155px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.poster-tracks li {
+  counter-increment: trk;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.16);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.poster-tracks li::before {
+  content: counter(trk, decimal-leading-zero);
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 15px;
+  color: var(--poster-accent);
+  flex-shrink: 0;
+}
+
+.status {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+  font-family: "Special Elite", cursive;
+  font-size: 18px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   4. TIROIR EN BOIS ANCIEN (Avec grain vintage, patine & moulure)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.shelf.shelf--drawer-slot {
+  padding: 5px 6px 2px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: #1a0c05;
+  box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.85);
+  perspective: 800px;
+  z-index: 30;
+}
+
+.vintage-drawer-front {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+  transform-style: preserve-3d;
+  transform-origin: bottom center;
+  will-change: transform;
+  backface-visibility: hidden;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Caisson interne en bois qui apparaît quand le tiroir s'entrouvre */
+.drawer-slide-box {
+  position: absolute;
+  top: -16px;
+  left: 10px;
+  right: 10px;
+  height: 22px;
+  background: linear-gradient(180deg, #5e3418 0%, #3d200d 100%);
+  border-left: 7px solid #8c4d26;
+  border-right: 7px solid #753e1d;
+  border-top: 2px solid #180c05;
+  box-shadow:
+    inset 0 6px 10px rgba(0, 0, 0, 0.7),
+    0 -2px 6px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translate3d(0, 14px, 0) scaleY(0.4);
+  transform-origin: bottom center;
+  will-change: transform, opacity;
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 160ms ease-out;
+  pointer-events: none;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.drawer-inner-divider {
+  width: 7px;
+  height: 100%;
+  background: linear-gradient(90deg, #a45c38, #783e1e);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.45);
+}
+
+/* Planche avant du tiroir en vieux bois patiné avec grain organique & cadre biseauté */
+.drawer-wood-plank {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border: 2.5px solid var(--ink);
+  border-radius: 2px;
+  overflow: hidden;
+
+  /* Bois ancien chaud assorti aux planches de l'étagère + patine d'usure centrale */
+  background:
+    /* Halo chaud d'usure autour de la poignée centrale */
+    radial-gradient(ellipse 140px 75px at 50% 54%, rgba(215, 138, 72, 0.28), transparent 72%),
+    /* Vignette sombre d'encrassement dans les angles du vieux tiroir */
+    radial-gradient(ellipse 90% 85% at 50% 50%, transparent 52%, rgba(18, 7, 2, 0.55) 100%),
+    /* Veines irrégulières du bois ancien */
+    repeating-linear-gradient(
+      179deg,
+      rgba(28, 11, 3, 0.16) 0px,
+      transparent 2px,
+      rgba(235, 175, 110, 0.07) 5px,
+      transparent 9px,
+      rgba(28, 11, 3, 0.12) 13px,
+      transparent 19px
+    ),
+    /* Base bois chaud acajou/noyer patiné */
+    linear-gradient(
+      180deg,
+      #96502b 0%,
+      #783b1c 38%,
+      #652f17 74%,
+      #4a200e 100%
+    );
+
+  /* Arête supérieure éclairée + bords chanfreinés profonds */
+  box-shadow:
+    inset 0 4px 0 #b86b40,
+    inset 0 5px 0 rgba(24, 10, 3, 0.65),
+    inset 0 -4px 0 #2e1307,
+    0 5px 12px rgba(0, 0, 0, 0.55);
+}
+
+/* Grain vintage haute performance (micro-pores du bois 100% GPU + cadre mouluré intérieur) */
+.drawer-wood-plank::before {
+  content: "";
+  position: absolute;
+  inset: 9px 12px;
+  border: 1.5px solid rgba(20, 8, 2, 0.68);
+  border-radius: 1px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 210, 155, 0.22),
+    0 1px 0 rgba(255, 210, 155, 0.18),
+    inset 0 0 18px rgba(18, 7, 2, 0.35);
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(18, 7, 2, 0.09) 0 1px,
+      transparent 1px 3px,
+      rgba(255, 210, 155, 0.04) 3px 4px,
+      transparent 4px 7px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(20, 8, 2, 0.14) 0 1px,
+      transparent 1px 4px,
+      rgba(240, 185, 120, 0.05) 4px 5px,
+      transparent 5px 9px
+    );
+  pointer-events: none;
+}
+
+/* Porte-étiquette combiné poignée-tirette en vieux bronze/fer noirci */
+.metal-card-pull {
+  position: relative;
+  width: 84px;
+  height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 3;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(185, 140, 75, 0.25), transparent 65%),
+    linear-gradient(
+      180deg,
+      #4a3b2c 0%,
+      #2b2219 48%,
+      #1a140f 100%
+    );
+  border: 2px solid #120d09;
+  border-radius: 3px;
+  padding: 5px 7px 0;
+  box-shadow:
+    0 5px 9px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(215, 165, 95, 0.18),
+    inset 0 1px 0 rgba(255, 225, 175, 0.32);
+}
+
+/* Oreilles latérales rivetées */
+.metal-card-pull::before,
+.metal-card-pull::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 16px;
+  transform: translateY(-50%);
+  background: radial-gradient(circle at 50% 50%, #7a5c38 15%, #261e16 65%);
+  border: 1.5px solid #120d09;
+  border-radius: 2px;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+.metal-card-pull::before { left: -6px; }
+.metal-card-pull::after  { right: -6px; }
+
+/* Fenêtre intérieure du porte-étiquette avec carte bristol jaunie vierge */
+.metal-frame-window {
+  width: 100%;
+  height: 29px;
+  border: 1.5px solid #120d09;
+  border-radius: 1px;
+  background:
+    radial-gradient(ellipse at 50% 50%, #dfd0b2 0%, #bfa67a 100%);
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.65),
+    0 1px 0 rgba(255, 225, 175, 0.22);
+}
+
+/* Bec tirette métallique recourbé en bas du cadre */
+.metal-pull-lip {
+  position: absolute;
+  bottom: -10px;
+  width: 48px;
+  height: 16px;
+  background:
+    radial-gradient(
+      ellipse at 50% 22%,
+      #785e40 0%,
+      #362b1f 52%,
+      #17120d 100%
+    );
+  border: 2px solid #120d09;
+  border-radius: 4px 4px 18px 18px;
+  box-shadow:
+    0 7px 9px rgba(0, 0, 0, 0.7),
+    inset 0 2px 2px rgba(255, 230, 185, 0.35);
+}
+
+/* Survol & sélection clavier */
+.vintage-drawer-front:hover,
+.vintage-drawer-front.selected {
+  transform: translate3d(0, 3px, 0) rotateX(-7deg) scale(1.01);
+  z-index: 90;
+}
+
+.vintage-drawer-front:hover .drawer-slide-box,
+.vintage-drawer-front.selected .drawer-slide-box {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scaleY(1);
+}
+
+.vintage-drawer-front:hover .drawer-wood-plank,
+.vintage-drawer-front.selected .drawer-wood-plank {
+  box-shadow:
+    0 0 0 2.5px #ffde59,
+    inset 0 4px 0 #c97b4c,
+    0 10px 18px rgba(0, 0, 0, 0.65);
+}
+
+.vintage-drawer-front.selected .book-cursor {
+  display: flex;
+  top: -28px;
+  z-index: 120;
+  animation: retro-bob 500ms ease-in-out infinite;
+}
+
+/* Glissement continu et fluide quand on tire le tiroir */
+.vintage-drawer-front.drawer-pulling {
+  transform: translate3d(0, 10px, 0) rotateX(-14deg) scale(1.03);
+}
+
+.vintage-drawer-front.drawer-pulling .drawer-slide-box {
+  opacity: 1;
+  transform: translate3d(0, -6px, 0) scaleY(1.32);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   5. TIROIR OUVERT — TONS CHAUDS (MARRON, NOIR & BLANC CRÈME)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  display: flex;
+  flex-direction: column;
+  background: var(--stage-bg, #170f09);
+  overflow-y: auto;
+  will-change: opacity;
+  animation: drawer-backdrop-in 210ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.drawer-overlay.is-closing {
+  animation: drawer-backdrop-out 170ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  pointer-events: none;
+}
+
+.drawer-overlay[hidden] {
+  display: none;
+}
+
+@keyframes drawer-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes drawer-backdrop-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.drawer-page-backdrop {
+  position: fixed;
+  inset: 0;
+  background-image: var(--poster-art);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.drawer-poster-card {
+  width: min(94vw, 760px);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-origin: 50% 85%;
+  animation: drawer-slide-open 310ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.drawer-overlay.is-closing .drawer-poster-card {
+  animation: drawer-slide-close 170ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.drawer-top-clean {
+  text-align: center;
+  padding: 14px 18px;
+}
+
+@keyframes drawer-slide-open {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0) scale(0.955);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes drawer-slide-close {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.97);
+  }
+}
+
+/* Compartiment intérieur du tiroir en bois chaud dans lequel sont rangés les vieux livres */
+.drawer-compartment-frame {
+  position: relative;
+  z-index: 2;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(20, 10, 3, 0.42) 0px,
+      transparent 34px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(35, 16, 5, 0.06) 0 2px,
+      transparent 2px 14px
+    ),
+    linear-gradient(
+      180deg,
+      #dfc9a6 0%,
+      #c9ae84 82%,
+      #ab8c60 100%
+    );
+  border: 2.5px solid var(--poster-ink, #18120b);
+  border-bottom: 18px solid #652f17;
+  box-shadow:
+    inset 0 8px 18px rgba(24, 11, 3, 0.45),
+    inset 0 -3px 0 #1e1108,
+    5px 5px 0 var(--poster-ink, #18120b);
+  padding: 38px 20px 0;
+  min-height: 275px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Rangée des vieux livres vieillis posés dans le tiroir */
+.drawer-books-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 235px;
+}
+
+/* ─── STYLE SPÉCIFIQUE DES VIEUX LIVRES VIEILLIS (`.aged-book`) ─── */
+
+.book.aged-book {
+  flex: 0 0 var(--bw);
+  will-change: transform, opacity;
+  animation: aged-book-settle 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: var(--book-delay, 0ms);
+}
+
+@keyframes aged-book-settle {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) rotate(var(--tilt, 0deg));
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(var(--tilt, 0deg));
+  }
+}
+
+/* Pages jaunies et tachées par le temps en haut du vieux livre */
+.aged-top-pages {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      #decb9e 0 1px,
+      #b59b6b 1px 2px
+    );
+  border-top-color: #3b2816;
+}
+
+/* Pochette latérale patinée / sépia ancien (sans filtre lourd recalculé à chaque frame) */
+.aged-book-face img {
+  opacity: 0.88;
+}
+
+.aged-book-face::after {
+  background:
+    /* Patine sépia chaude & usure aux bords de la couverture */
+    radial-gradient(circle at 30% 25%, rgba(165, 115, 55, 0.24) 20%, rgba(25, 14, 5, 0.52) 100%),
+    linear-gradient(
+      90deg,
+      rgba(220, 190, 140, 0.25) 0%,
+      rgba(130, 85, 35, 0.18) 35%,
+      rgba(20, 10, 3, 0.58) 95%
+    );
+}
+
+/* Face latérale / Tranche de vieux livre usé (cuir craquelé, coins frottés, titre) */
+.aged-book-spine {
+  background-image:
+    /* Effet d'usure / cuir râpé en haut et en bas de la tranche */
+    radial-gradient(ellipse at 50% 0%, rgba(215, 185, 135, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(20, 10, 3, 0.55) 0%, transparent 60%),
+    /* Craquelures horizontales de vieille reliure */
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 11px,
+      rgba(0, 0, 0, 0.14) 11px 12px,
+      rgba(255, 235, 195, 0.08) 12px 13px
+    ),
+    /* Volume cylindrique de la tranche */
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(255, 235, 195, 0.16) 24%,
+      rgba(0, 0, 0, 0.12) 55%,
+      rgba(0, 0, 0, 0.52) 100%
+    );
+  border-color: #1c1209;
+  box-shadow:
+    -1.5px 0 0 rgba(0, 0, 0, 0.75),
+    4px 3px 8px rgba(15, 8, 2, 0.45),
+    inset 0 4px 3px rgba(225, 195, 145, 0.22),
+    inset 0 -5px 5px rgba(0, 0, 0, 0.48);
+}
+
+/* Étiquette de titre jaunie sur les vieux livres */
+.aged-book-spine .book-title-wrap {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      #e2cfa6 0 2px,
+      #d4be90 2px 3px
+    );
+  color: #24180e;
+  border: 1px solid #3b2614;
+  padding: 6px 2px;
+  border-radius: 1px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.45),
+    inset 0 0 6px rgba(110, 70, 25, 0.35);
+}
+
+.aged-book-spine .book-title {
+  color: #24180e;
+  text-shadow: none;
+}
+
+/* Petit timbre de date de dernière écoute en haut de la tranche */
+.aged-book-date {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: "Special Elite", cursive;
+  font-size: 7.5px;
+  color: var(--text-color);
+  opacity: 0.88;
+  letter-spacing: 0.02em;
+  z-index: 2;
+  padding: 2px 0;
+  border-bottom: 1px dotted rgba(255, 235, 195, 0.35);
+}
+
+/* Pile de vieux livres couchés à l'intérieur du tiroir */
+.drawer-aged-stack {
+  margin: 0 10px;
+}
+
+.book.book--horizontal.aged-book .aged-book-date {
+  writing-mode: horizontal-tb;
+  transform: none;
+  border-bottom: 0;
+  border-right: 1px dotted rgba(255, 235, 195, 0.35);
+  padding: 0 4px 0 0;
+  white-space: nowrap;
+}
+
+.book.book--horizontal.aged-book .aged-book-spine .book-title-wrap {
+  padding: 2px 6px;
+}
+
+@media (max-width: 800px) {
+  body {
+    overflow: auto;
+    height: auto;
+  }
+  .library-view {
+    height: auto;
+    min-height: 100vh;
+  }
+  .shelves {
+    grid-template-columns: 1fr;
+    overflow-y: visible;
+    height: auto;
+  }
+  .bookcase-main {
+    border-right: 6px solid var(--ink);
+  }
+  .shelf {
+    min-height: 215px;
+  }
+  .shelf.shelf--drawer-slot {
+    min-height: 165px;
+  }
+  .drawer-box {
+    width: 96vw;
+    max-height: 90vh;
+  }
+  .drawer-grid {
+    grid-template-columns: 1fr;
+  }
+  .poster-body {
+    grid-template-columns: 1fr;
+  }
+}

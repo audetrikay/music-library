@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ma Bibliothèque Sonore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=DM+Sans:wght@400;500;700&family=Oswald:wght@500;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Press+Start+2P&family=Space+Grotesk:wght@500;700&family=Special+Elite&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+  <!-- ═══ BIBLIOTHÈQUE ARTISTIQUE PLEIN ÉCRAN ═══ -->
+  <main id="library-view" class="library-view">
+    <section id="shelves" class="shelves" aria-label="Bibliothèque musicale">
+      <p class="status">Chargement de la collection…</p>
+    </section>
+
+    <!-- HUD Rétro en bas -->
+    <footer class="retro-hud">
+      <div class="hud-controls">
+        <span><kbd>◀</kbd><kbd>▶</kbd> Choisir</span>
+        <span><kbd>▲</kbd><kbd>▼</kbd> Étagère</span>
+        <span><kbd>ENTRÉE</kbd> Ouvrir</span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ═══ TIROIR OUVERT : MÊME DA QUE LA VUE ALBUM + VIEUX LIVRES RANGÉS ═══ -->
+  <div id="forgotten-drawer-overlay" class="drawer-overlay" hidden>
+    <div class="drawer-page-backdrop" id="drawer-backdrop"></div>
+
+    <header class="album-page-bar">
+      <button id="close-drawer-btn" class="back-btn" type="button" aria-label="Retour à la bibliothèque">
+        <span class="back-key">ÉCHAP</span>
+        <span>← RETOUR AUX ÉTAGÈRES</span>
+      </button>
+    </header>
+
+    <div class="poster-stage">
+      <article id="drawer-card" class="poster-card drawer-poster-card" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+        <div class="poster-grain"></div>
+
+        <!-- En-tête épuré : uniquement le titre (sans sur-titre ni sous-titre) -->
+        <div class="poster-top drawer-top-clean">
+          <h1 id="drawer-title" class="poster-artist">ALBUMS OUBLIÉS</h1>
+          <span id="drawer-count-badge" hidden></span>
+        </div>
+
+        <!-- Intérieur du tiroir en bois : rangée de vieux livres vieillis vus par la tranche/face latérale -->
+        <div class="drawer-compartment-frame">
+          <div id="drawer-grid" class="drawer-books-row"></div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <!-- ═══ VUE DÉTAIL : POSTER VINTAGE COMPACT ═══ -->
+  <div id="album-page" class="album-page" hidden>
+    <div class="album-page-backdrop" id="album-backdrop"></div>
+
+    <header class="album-page-bar">
+      <button id="back-btn" class="back-btn" type="button" aria-label="Retour à la bibliothèque">
+        <span class="back-key">ÉCHAP</span>
+        <span>← RETOUR AUX ÉTAGÈRES</span>
+      </button>
+
+      <div class="poster-nav-btns">
+        <button id="prev-poster" class="poster-Step-btn" type="button" aria-label="Album précédent">◀ PRÉC.</button>
+        <button id="next-poster" class="poster-Step-btn" type="button" aria-label="Album suivant">SUIV. ▶</button>
+      </div>
+    </header>
+
+    <div class="poster-stage">
+      <article id="poster-card" class="poster-card">
+        <div class="poster-grain"></div>
+
+        <!-- En-tête éditorial du poster -->
+        <div class="poster-top">
+          <div class="poster-meta-strip">
+            <span id="poster-cat" class="poster-stamp">ARCHIVE VINYLE</span>
+            <span id="poster-plays" class="poster-plays"></span>
+            <span id="poster-num" class="poster-num">N° 01</span>
+          </div>
+          <h1 id="poster-artist" class="poster-artist"></h1>
+          <h2 id="poster-title" class="poster-title"></h2>
+        </div>
+
+        <!-- Corps du poster : Pochette à gauche + Tracklist à droite -->
+        <div class="poster-body">
+          <div class="poster-cover-frame">
+            <img id="poster-cover" class="poster-cover" alt="">
+            <div class="poster-sticker" id="poster-sticker">★ ÉDITION ART</div>
+          </div>
+
+          <div class="poster-tracks-col">
+            <div class="poster-badge-box">
+              <span class="badge-label">FACE A / B</span>
+              <span class="badge-sub" id="poster-track-count"></span>
+            </div>
+
+            <div class="tracklist-header">
+              <span>LISTE DES TITRES</span>
+              <span class="tracklist-line"></span>
+            </div>
+
+            <ol id="poster-tracks" class="poster-tracks"></ol>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+
+</body>
+</html>

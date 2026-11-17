@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - .env
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/index.html:/usr/share/nginx/html/index.html:ro
+      - ./frontend/style.css:/usr/share/nginx/html/style.css:ro
+      - ./frontend/script.js:/usr/share/nginx/html/script.js:ro
+      - ./image:/usr/share/nginx/html/image:ro
+    depends_on:
+      - backend

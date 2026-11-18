@@ -1324,6 +1324,72 @@ window.addEventListener("resize", () => {
   }, 200);
 });
 
+// Force le rafraîchissement du favicon dans l'onglet du navigateur (et recharge /image/flavicon.jpg dynamiquement s'il est servi)
+(function ensureTabFavicon() {
+  function applyFaviconHref(href) {
+    document.querySelectorAll("link[rel*='icon']").forEach(el => el.remove());
+    const fresh = document.createElement("link");
+    fresh.id = "site-favicon";
+    fresh.rel = "icon";
+    fresh.type = "image/png";
+    fresh.href = href;
+    document.head.appendChild(fresh);
+  }
+
+  const existing = document.getElementById("site-favicon");
+  if (existing && existing.href) {
+    applyFaviconHref(existing.href);
+  }
+
+  // Si /image/flavicon.jpg est accessible via le volume Docker, on le recadre en cercle automatiquement au cas où le fichier change
+  const probe = new Image();
+  probe.onload = () => {
+    try {
+      const c = document.createElement("canvas");
+      const w = probe.naturalWidth || 64;
+      const h = probe.naturalHeight || 64;
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext("2d");
+      ctx.drawImage(probe, 0, 0);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      let minX = w, minY = h, maxX = 0, maxY = 0;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          if (data[i] < 200 || data[i + 1] < 200 || data[i + 2] < 200) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      if (maxX > minX && maxY > minY) {
+        const pad = 6;
+        minX = Math.max(0, minX - pad);
+        minY = Math.max(0, minY - pad);
+        maxX = Math.min(w - 1, maxX + pad);
+        maxY = Math.min(h - 1, maxY + pad);
+        const size = Math.max(maxX - minX + 1, maxY - minY + 1);
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+        const out = document.createElement("canvas");
+        out.width = 64;
+        out.height = 64;
+        const octx = out.getContext("2d");
+        octx.beginPath();
+        octx.arc(32, 32, 31, 0, Math.PI * 2);
+        octx.closePath();
+        octx.clip();
+        octx.drawImage(probe, cx - size / 2, cy - size / 2, size, size, 1, 1, 62, 62);
+        applyFaviconHref(out.toDataURL("image/png"));
+      }
+    } catch (_) {}
+  };
+  probe.src = `/image/flavicon.jpg?t=${Date.now()}`;
+})();
+
 loadAlbums();
 
 setInterval(() => loadAlbums(true), 30000);

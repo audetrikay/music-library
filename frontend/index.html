@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ma Bibliothèque Sonore</title>
+  <title>Rewind</title>
+  <link id="site-favicon" rel="icon" type="image/png" href="data:image/png;base64,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">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,700;1,700&family=DM+Sans:wght@400;500;700&family=Oswald:wght@500;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Press+Start+2P&family=Space+Grotesk:wght@500;700&family=Special+Elite&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -57,9 +58,8 @@
     </div>
   </div>
 
-  <!-- ═══ VUE DÉTAIL : POSTER VINTAGE COMPACT ═══ -->
-  <div id="album-page" class="album-page" hidden>
-    <div class="album-page-backdrop" id="album-backdrop"></div>
+  <!-- ═══ VUE DÉTAIL : LIVRE PHYSIQUE 3D (Calques GPU pré-alloués pour 0ms de latence) ═══ -->
+  <div id="album-page" class="album-page" aria-hidden="true">
 
     <header class="album-page-bar">
       <button id="back-btn" class="back-btn" type="button" aria-label="Retour à la bibliothèque">
@@ -74,27 +74,69 @@
     </header>
 
     <div class="poster-stage">
-      <article id="poster-card" class="poster-card">
-        <div class="poster-grain"></div>
+      <div id="book-3d-wrapper" class="book-3d-wrapper">
+        <!-- Charnière / Reliure centrale du livre -->
+        <div class="book-3d-spine-hinge" aria-hidden="true"></div>
 
-        <!-- En-tête éditorial du poster -->
-        <div class="poster-top">
-          <div class="poster-meta-strip">
-            <span id="poster-cat" class="poster-stamp">ARCHIVE VINYLE</span>
-            <span id="poster-plays" class="poster-plays"></span>
-            <span id="poster-num" class="poster-num">N° 01</span>
+        <!-- Volet gauche pivotant en 3D (0deg = Couverture fermée / -180deg = Page de gauche ouverte) -->
+        <div id="book-3d-cover" class="book-3d-cover">
+          <!-- Face extérieure : Couverture reliée quand le livre est fermé -->
+          <div class="book-3d-cover-front" aria-hidden="true">
+            <div class="book-cover-ornament">
+              <span id="cover-3d-num" class="book-cover-code">N° 01</span>
+              <div class="book-cover-art-frame">
+                <img id="cover-3d-img" class="book-cover-art" alt="">
+              </div>
+              <span id="cover-3d-title" class="book-cover-title"></span>
+              <span id="cover-3d-artist" class="book-cover-artist"></span>
+            </div>
           </div>
-          <h1 id="poster-artist" class="poster-artist"></h1>
-          <h2 id="poster-title" class="poster-title"></h2>
+
+          <!-- Face intérieure : Page de gauche du livre une fois ouvert (-180deg) -->
+          <div class="book-3d-cover-inside">
+            <div class="book-left-page-paper">
+              <div class="left-page-header">
+                <span class="endpaper-exlibris">EX-LIBRIS · REWIND</span>
+                <span id="cover-3d-date" class="endpaper-date">COLLECTION</span>
+              </div>
+
+              <div class="poster-cover-frame">
+                <img id="poster-cover" class="poster-cover" alt="">
+                <div class="poster-sticker" id="poster-sticker">★ ÉDITION ART</div>
+              </div>
+
+              <p id="poster-last-listened" class="poster-last-listened" hidden></p>
+            </div>
+          </div>
         </div>
 
-        <!-- Corps du poster : Pochette à gauche + Tracklist à droite -->
-        <div class="poster-body">
-          <div class="poster-cover-frame">
-            <img id="poster-cover" class="poster-cover" alt="">
-            <div class="poster-sticker" id="poster-sticker">★ ÉDITION ART</div>
+        <!-- Épaisseur des pages jaunies sur la tranche droite et basse -->
+        <div class="book-pages-edge-right" aria-hidden="true"></div>
+        <div class="book-pages-edge-bottom" aria-hidden="true"></div>
+
+        <!-- Page de droite du livre ouvert (réutilise #poster-card) -->
+        <article id="poster-card" class="poster-card">
+          <img id="poster-bg-img" class="poster-bg-img" alt="" aria-hidden="true">
+          <div class="poster-bg-veil" aria-hidden="true"></div>
+          <div class="poster-grain"></div>
+
+          <!-- Pli central de reliure et signet en tissu -->
+          <div class="book-binding-crease" aria-hidden="true">
+            <span class="book-ribbon-marker"></span>
           </div>
 
+          <!-- En-tête éditorial (Artiste & Titre de l'album) -->
+          <div class="poster-top">
+            <div class="poster-meta-strip">
+              <span id="poster-cat" class="poster-stamp">ARCHIVE VINYLE</span>
+              <span id="poster-plays" class="poster-plays"></span>
+              <span id="poster-num" class="poster-num">N° 01</span>
+            </div>
+            <h1 id="poster-artist" class="poster-artist"></h1>
+            <h2 id="poster-title" class="poster-title"></h2>
+          </div>
+
+          <!-- Liste des titres écoutés sur la page de droite -->
           <div class="poster-tracks-col">
             <div class="poster-badge-box">
               <span class="badge-label">FACE A / B</span>
@@ -108,8 +150,8 @@
 
             <ol id="poster-tracks" class="poster-tracks"></ol>
           </div>
-        </div>
-      </article>
+        </article>
+      </div>
     </div>
   </div>
 

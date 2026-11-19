@@ -257,7 +257,27 @@ const posterThemes = [
   },
 ];
 
-/* ───────── Utilitaires & Pochettes par Défaut (sur les 15 images) ───────── */
+/* ───────── Utilitaires & Pochettes Pré-décodées en VRAM (0ms de latence) ───────── */
+
+const POCHETTE_URLS = EMBEDDED_POCHETTES.map((dataUri) => {
+  try {
+    const parts = dataUri.split(",");
+    const byteString = atob(parts[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([ab], { type: "image/jpeg" });
+    const blobUrl = URL.createObjectURL(blob);
+    const preloadImg = new Image();
+    preloadImg.src = blobUrl;
+    if (preloadImg.decode) preloadImg.decode().catch(() => {});
+    return blobUrl;
+  } catch (_) {
+    return dataUri;
+  }
+});
 
 function hash(str) {
   let h = 0;
@@ -269,7 +289,7 @@ function hash(str) {
 
 function getFallbackPochette(album, index) {
   const h = hash(album.album + album.artist);
-  return EMBEDDED_POCHETTES[(h + index * 7) % EMBEDDED_POCHETTES.length];
+  return POCHETTE_URLS[(h + index * 7) % POCHETTE_URLS.length];
 }
 
 function getCoverUrl(album, index) {
@@ -833,7 +853,7 @@ function createAgedDrawerBook(album, idx, options = {}) {
 
   btn.addEventListener("click", () => {
     selectDrawerBook(idx);
-    openAlbumPosterForAlbum(album, 200 + idx, `TIROIR \u00B7 ${dateInfo.line.toUpperCase()}`);
+    openAlbumPosterForAlbum(album, 200 + idx, `TIROIR \u00B7 ${dateInfo.line.toUpperCase()}`, btn);
   });
 
   return btn;
@@ -858,7 +878,7 @@ function prepareForgottenDrawerDOM() {
 
   // Appliquer la même DA que la page Poster d'album (avec l'affiche sépia pochette14)
   const theme = posterThemes[13] || posterThemes[0];
-  const bgArt = EMBEDDED_POCHETTES[theme.pochetteIdx];
+  const bgArt = POCHETTE_URLS[theme.pochetteIdx];
 
   drawerOverlay.style.setProperty("--stage-bg", theme.stage);
   drawerOverlay.style.setProperty("--poster-art", `url("${bgArt}")`);
@@ -1105,54 +1125,140 @@ function moveShelfVertical(direction) {
 }
 
 
-/* ───────── Ouverture de la Page Poster Détail (Étagères ou Tiroir) ───────── */
+/* ───────── Animation Physique du Livre 3D (Sortie de l'étagère -> Pivot Reliure -> Intérieur) ───────── */
 
-function openAlbumPoster(index) {
-  const activeEl = allBooks[index];
-  if (activeEl && activeEl.dataset.isDrawer === "true") {
-    triggerDrawerOpenAnimation(activeEl);
-    return;
-  }
+let pulledOutBookEl = null;
+let wrapperAnim     = null;
+let coverAnim       = null;
+let isBookClosing   = false;
+let isBookSwitching = false;
+let isAlbumPageOpen = false;
+let activeBookIndex = 0;
 
-  const album = allAlbums[index];
-  if (!album) return;
-  openAlbumPosterForAlbum(album, index);
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function openAlbumPosterForAlbum(album, index = 0, customSubtitle = null) {
+function getBookOriginVector(bookEl) {
+  if (!bookEl) {
+    return { dx: 0, dy: 48, tilt: "0deg" };
+  }
+  const rect = bookEl.getBoundingClientRect();
+  const bookCenterX = rect.left + rect.width / 2;
+  const bookCenterY = rect.top + rect.height / 2;
+  const viewportCenterX = window.innerWidth / 2;
+  const viewportCenterY = window.innerHeight / 2;
+
+  return {
+    dx: Math.round((bookCenterX - viewportCenterX) * 0.65),
+    dy: Math.round((bookCenterY - viewportCenterY) * 0.65),
+    tilt: bookEl.style.getPropertyValue("--tilt")?.trim() || "0deg",
+  };
+}
+
+function cancelBookAnimations() {
+  if (wrapperAnim) {
+    wrapperAnim.cancel();
+    wrapperAnim = null;
+  }
+  if (coverAnim) {
+    coverAnim.cancel();
+    coverAnim = null;
+  }
+}
+
+function populateBookDOM(album, index, customSubtitle, sourceBookEl) {
   activePosterAlbum = album;
+  activeBookIndex   = index;
 
-  const h     = hash(album.album + album.artist);
-  const theme = posterThemes[(h + index * 7) % posterThemes.length];
-  const bgArt = EMBEDDED_POCHETTES[theme.pochetteIdx];
+  const h       = hash(album.album + album.artist);
+  const theme   = posterThemes[(h + index * 7) % posterThemes.length];
+  const bgArt   = POCHETTE_URLS[theme.pochetteIdx];
+  const palette = index >= 200
+    ? agedBookPalettes[(h + (index - 200)) % agedBookPalettes.length]
+    : bookPalettes[(h + index) % bookPalettes.length];
+  const bookFont = titleFonts[h % titleFonts.length];
 
-  albumPage.style.setProperty("--stage-bg", theme.stage);
-  albumPage.style.setProperty("--poster-art", `url("${bgArt}")`);
+  const wrapper = document.getElementById("book-3d-wrapper");
+  if (wrapper) {
+    const bc   = sourceBookEl?.style.getPropertyValue("--bc").trim() || palette.bg;
+    const tc   = sourceBookEl?.style.getPropertyValue("--text-color").trim() || palette.text;
+    const band = sourceBookEl?.style.getPropertyValue("--band-color").trim() || palette.band;
+    wrapper.style.setProperty("--book-cover-bg", bc);
+    wrapper.style.setProperty("--book-cover-text", tc);
+    wrapper.style.setProperty("--book-cover-band", band);
+    wrapper.style.setProperty("--book-cover-font", bookFont);
+    wrapper.style.setProperty("--poster-bg", theme.bg);
+    wrapper.style.setProperty("--poster-panel", theme.panel);
+    wrapper.style.setProperty("--poster-veil", theme.veil);
+    wrapper.style.setProperty("--poster-ink", theme.ink);
+    wrapper.style.setProperty("--poster-accent", theme.accent);
+    wrapper.style.setProperty("--poster-font", theme.font);
+  }
 
   const card = document.getElementById("poster-card");
   card.style.setProperty("--poster-bg", theme.bg);
   card.style.setProperty("--poster-panel", theme.panel);
   card.style.setProperty("--poster-veil", theme.veil);
-  card.style.setProperty("--poster-art", `url("${bgArt}")`);
   card.style.setProperty("--poster-ink", theme.ink);
   card.style.setProperty("--poster-accent", theme.accent);
   card.style.setProperty("--poster-font", theme.font);
 
+  const bgImg = document.getElementById("poster-bg-img");
+  if (bgImg && bgImg.src !== bgArt) {
+    bgImg.src = bgArt;
+  }
+
+  const coverUrl = getCoverUrl(album, index);
+  const numLabel = `N\u00B0 ${String((index % 99) + 1).padStart(2, "0")}`;
+
+  // 1) Couverture extérieure du livre fermé
+  const cover3dNum    = document.getElementById("cover-3d-num");
+  const cover3dImg    = document.getElementById("cover-3d-img");
+  const cover3dTitle  = document.getElementById("cover-3d-title");
+  const cover3dArtist = document.getElementById("cover-3d-artist");
+  const cover3dDate   = document.getElementById("cover-3d-date");
+
+  if (cover3dNum)    cover3dNum.textContent    = numLabel;
+  if (cover3dTitle)  cover3dTitle.textContent  = album.album;
+  if (cover3dArtist) cover3dArtist.textContent = album.artist;
+  if (cover3dImg) {
+    cover3dImg.onerror = () => {
+      cover3dImg.onerror = null;
+      cover3dImg.src = album._fallbackUrl || bgArt;
+    };
+    cover3dImg.src = coverUrl;
+  }
+
+  // 2) Pages intérieures du livre ouvert (Page Gauche = Pochette & Date / Page Droite = Titres)
   const cover = document.getElementById("poster-cover");
   cover.alt = "";
-  const coverUrl = getCoverUrl(album, index);
   cover.onerror = () => {
     cover.onerror = null;
     cover.src = album._fallbackUrl || bgArt;
   };
   cover.src = coverUrl;
 
-  document.getElementById("poster-num").textContent   = `N\u00B0 ${String((index % 99) + 1).padStart(2, "0")}`;
-  document.getElementById("poster-plays").textContent = customSubtitle
+  document.getElementById("poster-num").textContent    = numLabel;
+  document.getElementById("poster-plays").textContent  = customSubtitle
     || (album.plays ? `${album.plays} \u00C9COUTE${album.plays > 1 ? "S" : ""} LAST.FM` : "COLLECTION");
   document.getElementById("poster-artist").textContent  = album.artist;
   document.getElementById("poster-title").textContent   = album.album;
   document.getElementById("poster-sticker").textContent = theme.sticker;
+
+  // Date de dernière écoute (si fournie par Last.fm)
+  const lastListenedEl = document.getElementById("poster-last-listened");
+  if (album.last_listened_uts || album.last_listened_date) {
+    const dateInfo = formatLastListened(album);
+    if (lastListenedEl) {
+      lastListenedEl.textContent = `${dateInfo.line} (${dateInfo.badge.toLowerCase()})`;
+      lastListenedEl.hidden = false;
+    }
+    if (cover3dDate) cover3dDate.textContent = dateInfo.badge;
+  } else {
+    if (lastListenedEl) lastListenedEl.hidden = true;
+    if (cover3dDate) cover3dDate.textContent = "COLLECTION VINYLE";
+  }
 
   const count = album.tracks.length;
   document.getElementById("poster-track-count").textContent =
@@ -1166,28 +1272,244 @@ function openAlbumPosterForAlbum(album, index = 0, customSubtitle = null) {
     li.textContent = trackName;
     list.appendChild(li);
   });
+}
 
-  albumPage.hidden = false;
+/* Animation Web Animations API 100% GPU : Sortie de l'étagère (livre fermé) -> Centre -> Ouverture -180° en double page */
+function playBookOpenAnimation(sourceBookEl, onComplete) {
+  const wrapper = document.getElementById("book-3d-wrapper");
+  const cover   = document.getElementById("book-3d-cover");
+  if (!wrapper || !cover) return;
+
+  cancelBookAnimations();
+  const { dx, dy, tilt } = getBookOriginVector(sourceBookEl);
+
+  if (prefersReducedMotion() || !wrapper.animate) {
+    wrapper.style.transform = "translate3d(50%, 0px, 0) scale(1) rotate(-0.3deg)";
+    wrapper.style.opacity   = "1";
+    cover.style.transform   = "rotateY(-180deg)";
+    if (onComplete) onComplete();
+    return;
+  }
+
+  const duration = 1150;
+  const easing   = "cubic-bezier(0.38, 0.04, 0.22, 1)";
+
+  // 1) Trajectoire du livre : part de son étagère (fermé) -> arrive au centre (35%) -> se décale à +50% à mesure que la page gauche s'ouvre
+  wrapperAnim = wrapper.animate(
+    [
+      {
+        transform: `translate3d(${dx}px, ${dy}px, 0) scale(0.42) rotate(${tilt})`,
+        opacity: 0,
+        offset: 0,
+      },
+      {
+        transform: "translate3d(0%, 6px, 0) scale(0.92) rotate(0deg)",
+        opacity: 1,
+        offset: 0.34,
+      },
+      {
+        transform: "translate3d(50%, 0px, 0) scale(1) rotate(-0.3deg)",
+        opacity: 1,
+        offset: 1,
+      },
+    ],
+    { duration, easing, fill: "forwards" }
+  );
+
+  // 2) Pivot 3D de la couverture autour de la reliure : reste fermée (0deg) jusqu'à 30%, puis s'ouvre à -180deg pour former la page gauche !
+  coverAnim = cover.animate(
+    [
+      { transform: "rotateY(0deg)",    offset: 0 },
+      { transform: "rotateY(-4deg)",   offset: 0.30 },
+      { transform: "rotateY(-180deg)", offset: 1 },
+    ],
+    { duration, easing, fill: "forwards" }
+  );
+
+  wrapperAnim.onfinish = () => {
+    wrapper.style.transform = "translate3d(50%, 0px, 0) scale(1) rotate(-0.3deg)";
+    wrapper.style.opacity   = "1";
+    cover.style.transform   = "rotateY(-180deg)";
+    if (onComplete) onComplete();
+  };
+}
+
+/* Animation inverse 100% GPU : La page gauche se referme (0deg) sur la page droite -> Le livre fermé retourne à son étagère */
+function playBookCloseAnimation(targetBookEl, onComplete) {
+  const wrapper = document.getElementById("book-3d-wrapper");
+  const cover   = document.getElementById("book-3d-cover");
+  if (!wrapper || !cover) {
+    if (onComplete) onComplete();
+    return;
+  }
+
+  cancelBookAnimations();
+  const { dx, dy, tilt } = getBookOriginVector(targetBookEl);
+
+  if (prefersReducedMotion() || !wrapper.animate) {
+    if (onComplete) onComplete();
+    return;
+  }
+
+  const duration = 900;
+  const easing   = "cubic-bezier(0.4, 0, 0.2, 1)";
+
+  wrapperAnim = wrapper.animate(
+    [
+      {
+        transform: "translate3d(50%, 0px, 0) scale(1) rotate(-0.3deg)",
+        opacity: 1,
+        offset: 0,
+      },
+      {
+        transform: "translate3d(0%, 6px, 0) scale(0.92) rotate(0deg)",
+        opacity: 1,
+        offset: 0.58,
+      },
+      {
+        transform: `translate3d(${dx}px, ${dy}px, 0) scale(0.42) rotate(${tilt})`,
+        opacity: 0,
+        offset: 1,
+      },
+    ],
+    { duration, easing, fill: "forwards" }
+  );
+
+  coverAnim = cover.animate(
+    [
+      { transform: "rotateY(-180deg)", offset: 0 },
+      { transform: "rotateY(0deg)",    offset: 0.62 },
+      { transform: "rotateY(0deg)",    offset: 1 },
+    ],
+    { duration, easing, fill: "forwards" }
+  );
+
+  wrapperAnim.onfinish = () => {
+    if (onComplete) onComplete();
+  };
+}
+
+function openAlbumPoster(index) {
+  const activeEl = allBooks[index];
+  if (activeEl && activeEl.dataset.isDrawer === "true") {
+    triggerDrawerOpenAnimation(activeEl);
+    return;
+  }
+
+  const album = allAlbums[index];
+  if (!album) return;
+  openAlbumPosterForAlbum(album, index, null, activeEl);
+}
+
+function openAlbumPosterForAlbum(album, index = 0, customSubtitle = null, sourceBookEl = null) {
+  isBookClosing   = false;
+  isBookSwitching = false;
+
+  if (pulledOutBookEl && pulledOutBookEl !== sourceBookEl) {
+    pulledOutBookEl.classList.remove("book--extracting", "book--pulled-out");
+  }
+  pulledOutBookEl = sourceBookEl || null;
+  if (pulledOutBookEl) {
+    pulledOutBookEl.classList.add("book--pulled-out");
+  }
+
+  populateBookDOM(album, index, customSubtitle, sourceBookEl);
+
+  isAlbumPageOpen = true;
+  albumPage.setAttribute("aria-hidden", "false");
+  albumPage.classList.remove("is-book-closing");
+  albumPage.classList.add("is-book-visible", "is-book-active");
+
+  playBookOpenAnimation(pulledOutBookEl);
+}
+
+/* Passage d'un album à un autre : le livre actuel se referme et retourne à son rayon, puis le suivant s'ouvre */
+function switchBookByOffset(delta) {
+  if (!isAlbumPageOpen || isBookClosing || isBookSwitching) return;
+
+  const isDrawerBook = activeBookIndex >= 200;
+  let nextAlbum, nextIdx, nextSubtitle = null, nextBookEl = null;
+
+  if (isDrawerBook) {
+    if (!forgottenAlbums.length) return;
+    const currentDrawerIdx = activeBookIndex - 200;
+    const targetDrawerIdx  = (currentDrawerIdx + delta + forgottenAlbums.length) % forgottenAlbums.length;
+    selectDrawerBook(targetDrawerIdx);
+    nextAlbum    = forgottenAlbums[targetDrawerIdx];
+    nextIdx      = 200 + targetDrawerIdx;
+    const dateInfo = formatLastListened(nextAlbum);
+    nextSubtitle = `TIROIR \u00B7 ${dateInfo.line.toUpperCase()}`;
+    nextBookEl   = drawerBooks[targetDrawerIdx] || null;
+  } else {
+    if (!allAlbums.length) return;
+    // Ordre exact des livres dans la bibliothèque (de 0 à allAlbums.length - 1)
+    const targetShelfIdx = (cursorIndex + delta + allAlbums.length) % allAlbums.length;
+    selectBook(targetShelfIdx);
+    nextAlbum  = allAlbums[targetShelfIdx];
+    nextIdx    = targetShelfIdx;
+    nextBookEl = allBooks[targetShelfIdx] || null;
+  }
+
+  if (!nextAlbum) return;
+
+  if (prefersReducedMotion()) {
+    openAlbumPosterForAlbum(nextAlbum, nextIdx, nextSubtitle, nextBookEl);
+    return;
+  }
+
+  isBookSwitching = true;
+  const previousBookEl = pulledOutBookEl;
+
+  // 1) Fermer le livre actuel et le renvoyer vers sa place sur l'étagère
+  playBookCloseAnimation(previousBookEl, () => {
+    if (previousBookEl) {
+      previousBookEl.classList.remove("book--extracting", "book--pulled-out");
+    }
+
+    // 2) Sortir le livre suivant de son propre emplacement et l'ouvrir au centre
+    pulledOutBookEl = nextBookEl;
+    if (pulledOutBookEl) {
+      pulledOutBookEl.classList.add("book--pulled-out");
+    }
+    populateBookDOM(nextAlbum, nextIdx, nextSubtitle, nextBookEl);
+
+    playBookOpenAnimation(nextBookEl, () => {
+      isBookSwitching = false;
+    });
+  });
 }
 
 function closeAlbumPoster() {
-  albumPage.hidden = true;
+  if (!isAlbumPageOpen || isBookClosing) return;
+
+  isBookClosing   = true;
+  isBookSwitching = false;
+  const closingBookEl = pulledOutBookEl;
+
+  albumPage.classList.remove("is-book-active");
+  albumPage.classList.add("is-book-closing");
+
+  playBookCloseAnimation(closingBookEl, () => {
+    cancelBookAnimations();
+    isAlbumPageOpen = false;
+    isBookClosing   = false;
+    albumPage.setAttribute("aria-hidden", "true");
+    albumPage.classList.remove("is-book-visible", "is-book-closing");
+    if (closingBookEl) {
+      closingBookEl.classList.remove("book--extracting", "book--pulled-out");
+    }
+    pulledOutBookEl = null;
+  });
 }
 
 backBtn.addEventListener("click", closeAlbumPoster);
 
 prevBtn.addEventListener("click", () => {
-  if (!allAlbums.length) return;
-  const prev = (cursorIndex - 1 + allAlbums.length) % allAlbums.length;
-  selectBook(prev);
-  openAlbumPoster(prev);
+  switchBookByOffset(-1);
 });
 
 nextBtn.addEventListener("click", () => {
-  if (!allAlbums.length) return;
-  const next = (cursorIndex + 1) % allAlbums.length;
-  selectBook(next);
-  openAlbumPoster(next);
+  switchBookByOffset(1);
 });
 
 albumPage.addEventListener("click", (e) => {
@@ -1200,16 +1522,16 @@ albumPage.addEventListener("click", (e) => {
 /* ───────── Contrôles Clavier ───────── */
 
 document.addEventListener("keydown", (e) => {
-  if (!albumPage.hidden) {
+  if (isAlbumPageOpen) {
     if (e.key === "Escape" || e.key === "Backspace") {
       e.preventDefault();
       closeAlbumPoster();
     } else if (e.key === "ArrowRight") {
       e.preventDefault();
-      nextBtn.click();
+      switchBookByOffset(1);
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
-      prevBtn.click();
+      switchBookByOffset(-1);
     }
     return;
   }
@@ -1304,7 +1626,7 @@ async function loadAlbums(isBackgroundRefresh = false) {
       allAlbums       = mainList;
       forgottenAlbums = forgottenList;
 
-      if (albumPage.hidden) {
+      if (!isAlbumPageOpen) {
         renderLibrary(allAlbums);
         prepareForgottenDrawerDOM();
       }
@@ -1318,7 +1640,7 @@ let resizeTimer;
 window.addEventListener("resize", () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (albumPage.hidden && (allAlbums.length || forgottenAlbums.length)) {
+    if (!isAlbumPageOpen && (allAlbums.length || forgottenAlbums.length)) {
       renderLibrary(allAlbums);
     }
   }, 200);
